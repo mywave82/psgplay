@@ -692,7 +692,7 @@ static void dasm_mark_text_trace_run(
 
 		psgplay_instruction_callback(pp, insn_cb, arg);
 
-		psgplay_read_stereo(pp, NULL, sample_count);
+		psgplay_read_stereo(pp, NULL, sample_count, 0);
 
 		psgplay_free(pp);
 	}

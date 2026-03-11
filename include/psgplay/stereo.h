@@ -33,7 +33,7 @@ struct psgplay_stereo {
  * indicating PSG play has been stopped, or negative on failure
  */
 ssize_t psgplay_read_stereo(struct psgplay *pp,
-	struct psgplay_stereo *buffer, size_t count);
+	struct psgplay_stereo *buffer, size_t count, ssize_t *d_refreshed);
 
 /**
  * psgplay_digital_to_stereo_cb - callback type to transform digital samples
