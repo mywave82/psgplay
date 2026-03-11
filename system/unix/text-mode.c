@@ -137,7 +137,7 @@ static void sample_buffer_flush(struct sample_buffer *sb)
 		if (sb->index == sb->size) {
 			sb->index = 0;
 			sb->size = psgplay_read_stereo(sb->pp,
-				sb->buffer, ARRAY_SIZE(sb->buffer));
+				sb->buffer, ARRAY_SIZE(sb->buffer), 0);
 
 			if (!sb->size)
 				break;
@@ -257,7 +257,7 @@ static uint64_t sample_buffer_update(struct sample_buffer *sb,
 		sb->seek = 0;
 		sb->index = 0;
 		sb->size = psgplay_read_stereo(sb->pp,
-			sb->buffer, ARRAY_SIZE(sb->buffer));
+			sb->buffer, ARRAY_SIZE(sb->buffer), 0);
 		if (sb->size < 0)
 			sb->size = 0;
 	}

@@ -657,10 +657,13 @@ static ssize_t psgplay_read_digital__(struct psgplay *pp,
 }
 
 ssize_t psgplay_read_stereo(struct psgplay *pp,
-	struct psgplay_stereo *buffer, size_t count)
+	struct psgplay_stereo *buffer, size_t count, ssize_t *d_refreshed)
 {
 	struct stereo_buffer *sb = &pp->stereo_buffer;
 	size_t index = 0;
+
+	if (d_refreshed)
+		*d_refreshed = 0;
 
 	if (!pp->downsample.stereo_frequency)
 		return -EINVAL;
@@ -675,16 +678,17 @@ ssize_t psgplay_read_stereo(struct psgplay *pp,
 				return -1;
 			}
 
-			struct psgplay_digital d[4096];
 			const ssize_t n = psgplay_read_digital__(
-				pp, d, ARRAY_SIZE(d));
+				pp, pp->d, ARRAY_SIZE(pp->d));
 
 			if (n < 0)
 				return n;
 			else if (!n)
 				return index;
 
-			digital_to_stereo_downsample(pp, d, n);
+			digital_to_stereo_downsample(pp, pp->d, n);
+			if (d_refreshed)
+				*d_refreshed = n;
 		}
 
 		const size_t n = min(count - index, sb->count - sb->index);
