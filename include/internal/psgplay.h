@@ -12,6 +12,7 @@
 #include "atari/dac.h"
 #include "atari/machine.h"
 
+#include "psgplay/digital.h"
 #include "psgplay/stereo.h"
 
 struct fir8 {
@@ -82,6 +83,8 @@ struct psgplay {
 	} instruction_callback;
 
 	int errno_;
+
+	struct psgplay_digital d[4096];
 };
 
 #endif /* INTERNAL_PSGPLAY_H */
