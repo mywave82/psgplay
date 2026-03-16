@@ -9,7 +9,7 @@ do
 		# rR - the symbol is in a read only data section
 		# tT - the symbol is in the text (code) section
 		# uU - the symbol is undefined
-		$2 ~ /[rRtTuU]/ { next }
+		$2 ~ /^[rRtTuU]$/ { next }
 
 		# Dotted names are apparently compiler internal, ignore
 		$3 ~ /[.]/ { next }
