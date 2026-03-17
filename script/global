@@ -11,9 +11,6 @@ do
 		# uU - the symbol is undefined
 		$2 ~ /^[rRtTuU]$/ { next }
 
-		# Dotted names are apparently compiler internal, ignore
-		$3 ~ /[.]/ { next }
-
 		# Pretty paths
 		{ sub(/:[0-9a-fA-F]+$/, "", $1) }
 		{ gsub(/:/, "    ", $1) }
