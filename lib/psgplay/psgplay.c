@@ -4,6 +4,7 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -364,6 +365,67 @@ void psgplay_digital_to_stereo_empiric(struct psgplay *pp,
 				   [digital[i].psg.lva.u5] - 0x8000 : 0;
 
 		stereo[i] = stereo_mix(&m, s, s, digital[i]);
+	}
+}
+
+void psgplay_calculate_empiric_lpf(struct psgplay_psg_stereo_empiric_lpf *p, const int fc, const int fs, const float Q)
+{
+	const float w = 2.0f * M_PI * fc / fs;
+	const float d = 1.0f / Q;
+	const float b = 0.5f * (1.0f - (d / 2.0f) * sinf(w)) /
+	                       (1.0f + (d / 2.0f) * sinf(w));
+	const float g = (0.5f + b) * cosf (w);
+
+	p->a0 = (0.5f + b - g) / 2.0f;
+	p->a1 =  0.5f + b - g;
+	p->a2 = p->a0;
+	p->b1 = -2.0f * g;
+	p->b2 =  2.0f * b;
+
+	p->x1 = 0.0f;
+	p->x2 = 0.0f;
+	p->y1 = 0.0f;
+	p->y2 = 0.0f;
+}
+
+void psgplay_digital_to_stereo_empiric_lpf(struct psgplay *pp,
+	struct psgplay_stereo *stereo, const struct psgplay_digital *digital,
+	size_t count, void *arg)
+{
+	struct psgplay_psg_stereo_empiric_lpf *p = arg;
+	struct mixer m = mixer_init(digital, count);
+
+	cf2149_atari_st_dac(&pp->dac);
+
+	for (size_t i = 0; i < count; i++) {
+		const int16_t s = digital->mixer.mix ?
+			pp->dac.lvl[digital[i].psg.lvc.u5]
+			           [digital[i].psg.lvb.u5]
+			           [digital[i].psg.lva.u5] - 0x8000 : 0;
+
+		/* scale audio to -1..1 */
+		const float x0 = (float)s / INT16_MAX + 0.5; /* move the DC a bit towards the center */
+
+		/* Calculate output */
+		const float y0 = p->a0 *    x0
+		               + p->a1 * p->x1
+		               + p->a2 * p->x2
+		               - p->b1 * p->y1
+		               - p->b2 * p->y2;
+
+		/* Update states */
+		p->x2 = p->x1;
+		p->x1 = x0;
+		p->y2 = p->y1;
+		p->y1 = y0;
+
+		/* scale back into integer, and clamp (saturate) the values */
+		int32_t s1 = (y0 * 0.75 /* scale it down a bit */ - 0.5) * INT16_MAX;
+
+		     if (s1 > INT16_MAX) s1 = INT16_MAX;
+		else if (s1 < INT16_MIN) s1 = INT16_MIN;
+
+		stereo[i] = stereo_mix(&m, (int16_t)s1, (int16_t)s1, digital[i]);
 	}
 }
 
