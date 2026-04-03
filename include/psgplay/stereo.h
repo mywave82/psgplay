@@ -155,4 +155,51 @@ typedef size_t (*psgplay_stereo_downsample_cb)(
 void psgplay_stereo_downsample_callback(struct psgplay *pp,
 	const psgplay_stereo_downsample_cb cb, void *arg);
 
+/**
+ * struct psgplay_psg_stereo_empiric_lpf - PSG play stereo empiric with Low-Pass Filter
+ * @a0: coeffecient applied to input sample, filled in by psgplay_calculate_empiric_lpf()
+ * @a1: coeffecient applied to historic input sample, filled in by psgplay_calculate_empiric_lpf()
+ * @a2: coeffecient applied to historic input sample, filled in by psgplay_calculate_empiric_lpf()
+ * @b1: coeffecient applied to historic output sample, filled in by psgplay_calculate_empiric_lpf()
+ * @b2: coeffecient applied to historic output sample, filled in by psgplay_calculate_empiric_lpf()
+ * @x1: writable variable used by psgplay_digital_to_stereo_empiric_lpf(), historic input sample
+ * @x2: writable variable used by psgplay_digital_to_stereo_empiric_lpf(), historic input sample
+ * @y1: writable variable used by psgplay_digital_to_stereo_empiric_lpf(), historic output sample
+ * @y2: writable variable used by psgplay_digital_to_stereo_empiric_lpf(), historic output sample
+ */
+struct psgplay_psg_stereo_empiric_lpf
+{
+	float a0, a1, a2; /* coeffecients input */
+	float     b1, b2; /* coeffecients outputs (historic only) */
+	float     x1, x2; /* historic input sample */
+	float     y1, y2; /* historic result sample */
+};
+
+/**
+ * psgplay_calculate_empiric_lpf: calculates coeffecients to be used by psgplay_digital_to_stereo_empiric_lpf()
+ * @p: target data area
+ * @fc: cut-off frequency for low-pass filter, typical default value is 880
+ * @fs: output sample-rate
+ * @Q: Q-factor, sharpness of the cut-off frequency, must be bigger than zero, typical default value is 1.0
+ */
+void psgplay_calculate_empiric_lpf(struct psgplay_psg_stereo_empiric_lpf *p, const int fc, const int fs, const float Q);
+
+/**
+ * psgplay_digital_to_stereo_empiric_lpf - empiric stereo mix of digital samples, including a Low-Pass Filter on the PSG chip output.
+ * @pp: PSG play object
+ * @stereo: stereo samples
+ * @digital: digital samples
+ * @count: number of stereo samples to transform into digital samples
+ * @arg: pointer to a struct psgplay_psg_stereo_empiric_lpf
+ *
+ * Performs the same as psgplay_digital_to_stereo_empiric(), but includes a
+ * Low-Pass Filter on the PSG output. Use psgplay_calculate_empiric_lpf to
+ * initialize a struct psgplay_psg_stereo_empiric_lpf, which MUST to be writable
+ * and preserved between calls to this function. Heavily inspired on filters
+ * found on https://github.com/dimtass/dsp-c-filters
+ */
+void psgplay_digital_to_stereo_empiric_lpf(struct psgplay *pp,
+	struct psgplay_stereo *stereo, const struct psgplay_digital *digital,
+	size_t count, void *arg);
+
 #endif /* PSGPLAY_STEREO_H */
