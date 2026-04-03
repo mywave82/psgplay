@@ -116,7 +116,7 @@ void command_replay(const struct options *options, struct file file,
 		struct psgplay_stereo buffer[256];
 
 		const ssize_t r = psgplay_read_stereo(
-			pp, buffer, ARRAY_SIZE(buffer));
+			pp, buffer, ARRAY_SIZE(buffer), 0);
 
 		if (!r)
 			break;
