@@ -15,9 +15,11 @@
 #include "psgplay/digital.h"
 #include "psgplay/stereo.h"
 
-struct fir8 {
-	int16_t xn[8];
+struct fir {
+	int16_t xn[16];
 	int k;
+	int length;
+	int32_t sum;
 };
 
 struct stereo_buffer {
@@ -58,8 +60,8 @@ struct psgplay {
 		uint64_t downsample_sample_cycle;
 
 		struct {
-			struct fir8 left;
-			struct fir8 right;
+			struct fir left;
+			struct fir right;
 		} lowpass;
 	} downsample;
 
