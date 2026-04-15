@@ -141,4 +141,15 @@ ssize_t psgplay_read_digital(struct psgplay *pp,
  */
 void psgplay_stop_digital_at_sample(struct psgplay *pp, size_t index);
 
+/**
+ * psgplay_set_digital_lowpass_length - sets the length of the FIR low-pass filter
+ * @pp: PSG play object to stop
+ * @length: how many samples to average out (range is 1 to 16, default 8)
+ *
+ * Calling this allows to adjust the length of the window that is used to
+ * average out the audio, acting as a low-pass filter on the PSG audio.
+ */
+
+void psgplay_set_digital_lowpass_length (struct psgplay *pp, int length);
+
 #endif /* PSGPLAY_DIGITAL_H */
