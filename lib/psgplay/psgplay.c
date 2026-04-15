@@ -130,16 +130,41 @@ static int buffer_digital_mixer_sample(const struct mixer_sample *sample,
 	return err;
 }
 
-static int16_t sample_lowpass(int16_t sample, struct fir8 *lowpass)
+static int16_t sample_lowpass(int16_t sample, struct fir *lowpass)
 {
-	lowpass->xn[lowpass->k++ % ARRAY_SIZE(lowpass->xn)] = sample;
+	lowpass->sum -= lowpass->xn[lowpass->k];
+	lowpass->sum += lowpass->xn[lowpass->k] = sample;
+	lowpass->k++;
 
-	s32 x = 0;
-	for (int i = 0; i < ARRAY_SIZE(lowpass->xn); i++)
-		x += lowpass->xn[i];	/* Simplistic 8 tap FIR filter. */
+	if (lowpass->k >= lowpass->length)
+		lowpass->k = 0;
 
-	return x / ARRAY_SIZE(lowpass->xn);
+	return lowpass->sum / lowpass->length;
 }
+
+void psgplay_set_digital_lowpass_length (struct psgplay *pp, int length)
+{
+	if (length < 1) length = 1;
+	if (length > ARRAY_SIZE(pp->downsample.lowpass.left.xn)) length = ARRAY_SIZE(pp->downsample.lowpass.left.xn);
+
+	if (pp->downsample.lowpass.left.length == length)
+	{
+		return;
+	}
+
+	pp->downsample.lowpass.left.length = length;
+	pp->downsample.lowpass.right.length = length;
+
+	pp->downsample.lowpass.left.k = 0;
+	pp->downsample.lowpass.right.k = 0;
+
+	pp->downsample.lowpass.left.sum = 0;
+	pp->downsample.lowpass.right.sum = 0;
+
+	memset (pp->downsample.lowpass.left.xn, 0, sizeof (pp->downsample.lowpass.left.xn));
+	memset (pp->downsample.lowpass.right.xn, 0, sizeof (pp->downsample.lowpass.right.xn));
+}
+
 
 struct mixer {
 	bool enable;
@@ -578,6 +603,9 @@ struct psgplay *psgplay_init(const void *data, size_t size,
 
 	psgplay_digital_to_stereo_callback(pp,
 		psgplay_digital_to_stereo_empiric, NULL);
+
+	pp->downsample.lowpass.left.length = 8;
+	pp->downsample.lowpass.right.length = 8;
 
 	psgplay_stereo_downsample_callback(pp,
 		stereo_downsample, &pp->downsample);
